@@ -14,8 +14,7 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.example.account.type.AccountStatus.IN_USE;
@@ -38,10 +37,7 @@ public class AccountService {
 
         validateCreateAccount(accountUser);
 
-        String newAccountNumber = accountRepository.findFirstByOrderByIdDesc()
-                .map(account -> (Integer.parseInt(account.getAccountNumber())) + 1 + "")
-                .orElse("1000000000");
-
+        String newAccountNumber = getNewRandomAccountNumber();
 
         return AccountDto.fromEntity(
                 accountRepository.save(Account.builder()
@@ -52,6 +48,31 @@ public class AccountService {
                         .registeredAt(LocalDateTime.now())
                         .build()
                 ));
+    }
+
+    private String getNewRandomAccountNumber() {
+        Set<String> hasAccountNumberSet = new HashSet<>();
+        String result = getRandomAccountNumber();
+
+        int count = 0;
+
+        while (true) {
+            if (hasAccountNumberSet.contains(result)) {
+                result = getRandomAccountNumber();
+                continue;
+            } else if (accountRepository.existsByAccountNumber(result)) {
+                hasAccountNumberSet.add(result);
+                result = getRandomAccountNumber();
+                continue;
+            }
+
+            return result;
+        }
+    }
+
+    private String getRandomAccountNumber() {
+        long random = (long)((Math.random() * 9_000_000_000L) + 1_000_000_000);
+        return Long.toString(random);
     }
 
     private void validateCreateAccount(AccountUser accountUser) {

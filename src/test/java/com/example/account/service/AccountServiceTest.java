@@ -48,10 +48,6 @@ class AccountServiceTest {
         given(accountUserRepository.findById(anyLong()))
                 .willReturn(Optional.of(user));
 
-        given(accountRepository.findFirstByOrderByIdDesc())
-                .willReturn(Optional.of(Account.builder()
-                        .accountNumber("1000000012").build()));
-
         given(accountRepository.save(any()))
                 .willReturn(Account.builder()
                         .accountUser(user)
@@ -64,9 +60,15 @@ class AccountServiceTest {
 
         //then
         verify(accountRepository, times(1)).save(captor.capture());
+
         assertEquals(12L, accountDto.getUserId());
         assertEquals("1000000015", accountDto.getAccountNumber());
-        assertEquals("1000000013", captor.getValue().getAccountNumber());
+
+        long accountNumber = Long.parseLong(captor.getValue()
+                .getAccountNumber());
+
+        assertTrue(1_000_000_000L <= accountNumber
+                && accountNumber < 10_000_000_000L);
     }
 
     @Test
@@ -79,23 +81,19 @@ class AccountServiceTest {
         given(accountUserRepository.findById(anyLong()))
                 .willReturn(Optional.of(user));
 
-        given(accountRepository.findFirstByOrderByIdDesc())
-                .willReturn(Optional.empty());
+        String newAccountNumber = getRandomAccountNumber();
 
         given(accountRepository.save(any()))
                 .willReturn(Account.builder()
                         .accountUser(user)
-                        .accountNumber("1000000015").build());
-
-        ArgumentCaptor<Account> captor = ArgumentCaptor.forClass(Account.class);
+                        .accountNumber(newAccountNumber).build());
 
         //when
         AccountDto accountDto = accountService.createAccount(1L, 1000L);
 
         //then
-        verify(accountRepository, times(1)).save(captor.capture());
         assertEquals(15L, accountDto.getUserId());
-        assertEquals("1000000000", captor.getValue().getAccountNumber());
+        assertEquals(newAccountNumber, accountDto.getAccountNumber());
     }
 
     @Test
@@ -281,29 +279,29 @@ class AccountServiceTest {
     }
 
     @Test
-    void successGetAccountsByUserId(){
+    void successGetAccountsByUserId() {
         //given
         AccountUser pobi = AccountUser.builder()
                 .name("Pobi").build();
         pobi.setId(12L);
 
         List<Account> accounts = Arrays.asList(
-                        Account.builder()
-                                .accountUser(pobi)
-                                .accountNumber("1111111111")
-                                .balance(1000L)
-                                .build(),
-                        Account.builder()
-                                .accountUser(pobi)
-                                .accountNumber("2222222222")
-                                .balance(2000L)
-                                .build(),
-                        Account.builder()
-                                .accountUser(pobi)
-                                .accountNumber("3333333333")
-                                .balance(3000L)
-                                .build()
-                );
+                Account.builder()
+                        .accountUser(pobi)
+                        .accountNumber("1111111111")
+                        .balance(1000L)
+                        .build(),
+                Account.builder()
+                        .accountUser(pobi)
+                        .accountNumber("2222222222")
+                        .balance(2000L)
+                        .build(),
+                Account.builder()
+                        .accountUser(pobi)
+                        .accountNumber("3333333333")
+                        .balance(3000L)
+                        .build()
+        );
 
         given(accountUserRepository.findById(anyLong()))
                 .willReturn(Optional.of(pobi));
@@ -324,7 +322,7 @@ class AccountServiceTest {
     }
 
     @Test
-    void failedToGetAccounts(){
+    void failedToGetAccounts() {
         //given
         given(accountUserRepository.findById(anyLong()))
                 .willReturn(Optional.empty());
@@ -335,5 +333,10 @@ class AccountServiceTest {
 
         //then
         assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+    }
+
+    private String getRandomAccountNumber() {
+        long random = (long) ((Math.random() * 9_000_000_000L) + 1_000_000_000);
+        return Long.toString(random);
     }
 }

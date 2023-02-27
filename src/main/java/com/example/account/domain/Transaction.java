@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 public class Transaction extends BaseEntity{
-     @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)
     private TransactionType transactionType;
     @Enumerated(EnumType.STRING)
     private TransactionResultType transactionResultType;
